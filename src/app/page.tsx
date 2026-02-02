@@ -1,65 +1,179 @@
-import Image from "next/image";
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { Code, Eye, Play, Save, User } from "lucide-react";
 
 export default function Home() {
+  // 1. Состояние для кода (HTML, CSS, JS) и данных студента
+  const [htmlCode, setHtmlCode] = useState<string>(`
+<div class="card">
+  <h1>Привет, Институт!</h1>
+  <p>Меня зовут [Твое Имя] и я хочу сюда поступить.</p>
+  <button id="myBtn">Нажми меня</button>
+</div>`);
+
+  const [cssCode, setCssCode] = useState<string>(`
+body {
+  background: #1a1a2e;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  font-family: sans-serif;
+}
+.card {
+  background: linear-gradient(145deg, #e63946, #f1faee);
+  color: #1d3557;
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  text-align: center;
+  transition: transform 0.3s;
+}
+.card:hover {
+  transform: scale(1.05);
+}
+button {
+  margin-top: 15px;
+  padding: 10px 20px;
+  background: #1d3557;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+`);
+
+  const [jsCode, setJsCode] = useState<string>(`
+document.getElementById('myBtn').addEventListener('click', () => {
+  alert('Ты уже программист! 🚀');
+  document.body.style.background = '#ffba08';
+});
+`);
+
+  const [studentName, setStudentName] = useState("");
+  const [srcDoc, setSrcDoc] = useState("");
+
+  // 2. Функция сборки (компиляции) кода в живом времени
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setSrcDoc(`
+        <html>
+          <style>${cssCode}</style>
+          <body>${htmlCode}</body>
+          <script>${jsCode}</script>
+        </html>
+      `);
+    }, 250); // Небольшая задержка, чтобы не рендерить на каждый клик
+
+    return () => clearTimeout(timeout);
+  }, [htmlCode, cssCode, jsCode]);
+
+  // 3. Заглушка для сохранения (сделаем в следующем шаге)
+  const handleSave = () => {
+    if (!studentName) {
+      alert("Пожалуйста, представься (введи имя сверху)!");
+      return;
+    }
+    console.log("Saving...", { studentName, htmlCode, cssCode, jsCode });
+    alert(`Круто, ${studentName}! Твоя страница сохранена (пока в консоль).`);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+      <div className="flex h-screen bg-slate-900 text-white font-sans overflow-hidden">
+        {/* ЛЕВАЯ КОЛОНКА: Редактор */}
+        <div className="w-1/2 flex flex-col border-r border-slate-700">
+
+          {/* Хедер редактора */}
+          <div className="p-4 border-b border-slate-700 bg-slate-800 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <Code className="text-blue-400" />
+              <span className="font-bold text-lg">Hacker Mode</span>
+            </div>
+            <div className="flex items-center gap-2 bg-slate-700 px-3 py-1 rounded-full">
+              <User size={16} className="text-slate-400" />
+              <input
+                  type="text"
+                  placeholder="Твое Имя и Фамилия"
+                  className="bg-transparent border-none outline-none text-sm text-white placeholder-slate-400 w-40"
+                  value={studentName}
+                  onChange={(e) => setStudentName(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Области кода (Скролл) */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+            {/* HTML Блок */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-orange-400 uppercase">HTML (Структура)</label>
+              <textarea
+                  value={htmlCode}
+                  onChange={(e) => setHtmlCode(e.target.value)}
+                  className="w-full h-32 bg-slate-950 p-3 rounded border border-slate-700 font-mono text-sm text-gray-300 focus:border-orange-500 outline-none resize-none"
+              />
+            </div>
+
+            {/* CSS Блок */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-blue-400 uppercase">CSS (Стиль)</label>
+              <textarea
+                  value={cssCode}
+                  onChange={(e) => setCssCode(e.target.value)}
+                  className="w-full h-32 bg-slate-950 p-3 rounded border border-slate-700 font-mono text-sm text-gray-300 focus:border-blue-500 outline-none resize-none"
+              />
+            </div>
+
+            {/* JS Блок */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-yellow-400 uppercase">JS (Интерактив)</label>
+              <textarea
+                  value={jsCode}
+                  onChange={(e) => setJsCode(e.target.value)}
+                  className="w-full h-32 bg-slate-950 p-3 rounded border border-slate-700 font-mono text-sm text-gray-300 focus:border-yellow-500 outline-none resize-none"
+              />
+            </div>
+
+          </div>
+
+          {/* Футер с кнопкой */}
+          <div className="p-4 bg-slate-800 border-t border-slate-700">
+            <button
+                onClick={handleSave}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded flex items-center justify-center gap-2 transition-all"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              <Save size={20} />
+              Опубликовать мой сайт
+            </button>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        {/* ПРАВАЯ КОЛОНКА: Превью */}
+        <div className="w-1/2 flex flex-col bg-white">
+          <div className="p-2 bg-slate-100 border-b border-slate-300 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-slate-600">
+              <Eye size={16} />
+              <span className="text-xs font-semibold uppercase tracking-wider">Live Preview</span>
+            </div>
+            <div className="flex gap-1">
+              <div className="w-3 h-3 rounded-full bg-red-400"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+              <div className="w-3 h-3 rounded-full bg-green-400"></div>
+            </div>
+          </div>
+          <div className="flex-1 relative">
+            {/* Песочница (Iframe) */}
+            <iframe
+                srcDoc={srcDoc}
+                title="output"
+                sandbox="allow-scripts"
+                className="w-full h-full border-none"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
         </div>
-      </main>
-    </div>
+      </div>
   );
 }

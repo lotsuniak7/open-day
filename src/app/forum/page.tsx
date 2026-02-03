@@ -23,14 +23,6 @@ interface StudentPageMeta {
 }
 
 // ---------------------------------------------------------------------------
-// helpers
-// ---------------------------------------------------------------------------
-function deriveTag(page: StudentPageMeta): string {
-    // server already sends this; keep fallback for safety
-    return page.tag || "Portfolio";
-}
-
-// ---------------------------------------------------------------------------
 // components
 // ---------------------------------------------------------------------------
 
@@ -39,7 +31,6 @@ function StudentCard({ page }: { page: StudentPageMeta }) {
     const bg = page.previewBg || "#0f172a";
     const color = page.previewColor || "#f1f5f9";
     const title = page.previewTitle || page.name;
-    const tag = deriveTag(page);
 
     return (
         <Link
@@ -73,19 +64,15 @@ function StudentCard({ page }: { page: StudentPageMeta }) {
                    text-white px-6 text-center
                    opacity-0 group-hover:opacity-100 transition-opacity duration-250"
             >
-        <span
-            className="inline-block bg-white/15 backdrop-blur px-3 py-1 rounded-full
-                     text-[10px] font-bold uppercase tracking-widest mb-4"
-        >
-          {tag}
-        </span>
-                <p className="text-base font-bold leading-tight mb-1">{page.name}</p>
-                <p className="text-xs opacity-50 mb-5 font-mono">
+                {/* ТЭГИ УБРАНЫ ПО ЗАПРОСУ */}
+
+                <p className="text-xl font-bold leading-tight mb-2">{page.name}</p>
+                <p className="text-xs opacity-50 mb-6 font-mono">
                     {new Date(page.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
                 </p>
-                <span className="flex items-center gap-1.5 text-blue-400 font-bold text-xs">
-          Voir la page <ArrowRight size={14} />
-        </span>
+                <span className="flex items-center gap-1.5 text-blue-400 font-bold text-sm">
+                  Voir la création <ArrowRight size={16} />
+                </span>
             </div>
         </Link>
     );
@@ -110,9 +97,9 @@ function SkeletonGrid({ count = 6 }: { count?: number }) {
 function EmptyState() {
     return (
         <div className="col-span-full py-24 text-center text-slate-500">
-            <p className="text-lg font-semibold mb-1">Aucune page pour le moment</p>
+            <p className="text-lg font-semibold mb-1">Aucune création pour le moment</p>
             <p className="text-sm font-mono opacity-60">
-                Les pages des étudiants apparaîtront ici après la création.
+                Soyez le premier à publier votre page !
             </p>
         </div>
     );
@@ -149,8 +136,7 @@ export default function ForumPage() {
         return pages.filter(
             (p) =>
                 p.name.toLowerCase().includes(q) ||
-                (p.previewTitle || "").toLowerCase().includes(q) ||
-                (p.tag || "").toLowerCase().includes(q)
+                (p.previewTitle || "").toLowerCase().includes(q)
         );
     }, [pages, query]);
 
@@ -161,13 +147,13 @@ export default function ForumPage() {
                 <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
                     {/* logo / branding */}
                     <div className="flex items-center gap-3 shrink-0">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 leading-tight">
-              IUT Dijon
-            </span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 leading-tight">
+                          IUT Dijon
+                        </span>
                         <span className="text-slate-700">|</span>
                         <span className="text-sm font-black tracking-tight text-white">
-              MMI <span className="text-blue-500">·</span> OPEN DAY
-            </span>
+                          MMI <span className="text-blue-500">·</span> JPO 2026
+                        </span>
                     </div>
 
                     {/* search – wired */}
@@ -180,7 +166,7 @@ export default function ForumPage() {
                             type="text"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Chercher un étudiant…"
+                            placeholder="Rechercher..."
                             className="w-full pl-8 pr-3 py-2 bg-slate-900 border border-slate-800
                          rounded-lg text-sm text-slate-200 placeholder-slate-600
                          outline-none focus:border-blue-600 transition-colors"
@@ -190,8 +176,8 @@ export default function ForumPage() {
                     {/* page count badge */}
                     {!loading && (
                         <span className="text-[11px] font-mono text-slate-600 shrink-0">
-              {filtered.length} page{filtered.length !== 1 ? "s" : ""}
-            </span>
+                          {filtered.length} création{filtered.length !== 1 ? "s" : ""}
+                        </span>
                     )}
                 </div>
             </header>
@@ -208,20 +194,19 @@ export default function ForumPage() {
                     }}
                 />
 
-                <div className="relative z-10 max-w-6xl mx-auto px-5 py-16 sm:py-24">
+                <div className="relative z-10 max-w-6xl mx-auto px-5 py-16 sm:py-24 text-center sm:text-left">
                     {/* eyebrow */}
                     <p className="font-mono text-[11px] uppercase tracking-widest text-blue-500 mb-4">
-                        Journée Portes Ouvertes — 2025
+                        Journée Portes Ouvertes — 2026
                     </p>
                     {/* title */}
-                    <h1 className="text-4xl sm:text-6xl font-black leading-none tracking-tight text-white mb-4">
-                        Les Talents
-                        <br />
-                        <span className="text-slate-600">de Demain</span>
+                    <h1 className="text-5xl sm:text-7xl font-black leading-none tracking-tight text-white mb-6">
+                        JPO MMI
+                        <span className="text-slate-700">.</span>
                     </h1>
                     {/* sub */}
-                    <p className="text-slate-500 max-w-md text-base leading-relaxed">
-                        Parcourez les sites créés par les étudiants MMI. Chaque page — une vision, une stack, un style.
+                    <p className="text-slate-400 max-w-lg text-lg leading-relaxed sm:mx-0 mx-auto">
+                        Retrouvez ici les sites créés en direct par les visiteurs et futurs étudiants.
                     </p>
                 </div>
             </section>
@@ -244,10 +229,10 @@ export default function ForumPage() {
             {/* --------------------------------------------------------- footer */}
             <footer className="border-t border-slate-800 py-8">
                 <div className="max-w-6xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-600 text-[11px] font-mono">
-                    <span>© 2025 IUT Dijon — Département MMI</span>
+                    <span>© 2026 IUT Dijon — Département MMI</span>
                     <span className="flex items-center gap-1 opacity-50">
-            Open Day Builder <ExternalLink size={10} />
-          </span>
+                        JPO Edition <ExternalLink size={10} />
+                    </span>
                 </div>
             </footer>
         </div>

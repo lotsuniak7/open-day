@@ -6,32 +6,35 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { sections, bgImage, studentFirstName, studentLastName } = body;
 
-        // 1. Пытаемся понять имя студента
+        // 1. Формируем имя студента
         let studentName = "Anonyme";
-
-        // Если пришли поля имени/фамилии (из модалки, если она есть)
         if (studentFirstName || studentLastName) {
             studentName = `${studentFirstName || ""} ${studentLastName || ""}`.trim();
         } else {
-            // Иначе ищем в блоках (Hero или Glitch)
+            // Пытаемся найти имя в блоках Hero или Glitch
             const heroBlock = sections.find((s: any) => s.type === 'hero' || s.type === 'glitch');
             if (heroBlock?.content?.title) studentName = heroBlock.content.title;
         }
 
-        // 2. Вставляем в базу (Neon Postgres)
-        // RETURNING id вернет нам номер созданной страницы (1, 2, 3...)
+        // 2. Вставляем данные в базу
+        // ВАЖНО: Мы используем JSON.stringify для sections, так как в базе это текстовое поле
         const result = await sql`
       INSERT INTO student_pages (name, content, bg_image)
       VALUES (${studentName}, ${JSON.stringify(sections)}, ${bgImage || ""})
       RETURNING id;
     `;
 
+        // 3. Получаем ID новой записи
         const newId = result.rows[0].id;
 
         return NextResponse.json({ success: true, id: newId });
 
     } catch (error) {
-        console.error("Database Error:", error);
-        return NextResponse.json({ success: false, error: "Erreur sauvegarde" }, { status: 500 });
+        console.error("ОШИБКА СОХРАНЕНИЯ:", error);
+        // Возвращаем текст ошибки, чтобы видеть её в консоли браузера
+        return NextResponse.json(
+            { success: false, error: String(error) },
+            { status: 500 }
+        );
     }
 }

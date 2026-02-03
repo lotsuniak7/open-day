@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
-import prisma from "../../../lib/prisma";
+import { sql } from "@vercel/postgres";
 
-interface Section {
-    type: string;
-    content: Record<string, any>;
-    styles?: { bg?: string; color?: string };
-}
+// Вспомогательные функции (оставляем как были)
+interface Section { type: string; content: Record<string, any>; styles?: { bg?: string; color?: string }; }
 
 function extractPreview(sections: Section[]) {
     const hero = sections.find((s) => s.type === "hero" || s.type === "glitch");
@@ -23,19 +20,18 @@ function deriveTag(sections: Section[]): string {
     if (types.has("terminal")) return "Terminal";
     if (types.has("video")) return "Video";
     if (types.has("project")) return "Projet";
-    if (types.has("skills")) return "Skills";
     if (types.has("glitch")) return "Hacker";
     return "Portfolio";
 }
 
 export async function GET() {
     try {
-        const rows = await prisma.studentPage.findMany({
-            orderBy: { createdAt: "desc" },
-            select: { id: true, name: true, bgImage: true, content: true, createdAt: true },
-        });
+        // Получаем все страницы, сортируем: новые сверху
+        const result = await sql`
+      SELECT * FROM student_pages ORDER BY created_at DESC;
+    `;
 
-        const pages = rows.map((row) => {
+        const pages = result.rows.map((row) => {
             let sections: Section[] = [];
             try { sections = JSON.parse(row.content); } catch {}
 
@@ -44,8 +40,8 @@ export async function GET() {
             return {
                 id: row.id,
                 name: row.name,
-                bgImage: row.bgImage,
-                createdAt: row.createdAt,
+                bgImage: row.bg_image,
+                createdAt: row.created_at,
                 previewTitle,
                 previewBg,
                 previewColor,
@@ -55,7 +51,7 @@ export async function GET() {
 
         return NextResponse.json(pages);
     } catch (error) {
-        console.error("GET /api/pages →", error);
-        return NextResponse.json({ error: "Server error" }, { status: 500 });
+        console.error("Forum Error:", error);
+        return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
     }
 }

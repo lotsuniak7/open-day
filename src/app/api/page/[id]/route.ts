@@ -1,36 +1,32 @@
 import { NextResponse } from "next/server";
-import prisma from "../../../../lib/prisma";
+import { sql } from "@vercel/postgres";
 
 export async function GET(
     _request: Request,
-    { params }: { params: Promise<{ id: string }> } // Next.js 15: params это Promise
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = await params; // 1. Достаем ID (это строка, например "1")
+        const { id } = await params;
 
-        // 2. Превращаем строку в число, так как в базе теперь Int
-        const pageId = parseInt(id);
+        // SQL запрос: найти по ID
+        const result = await sql`
+      SELECT * FROM student_pages WHERE id = ${id} LIMIT 1;
+    `;
 
-        if (isNaN(pageId)) {
-            return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
-        }
-
-        const page = await prisma.studentPage.findUnique({
-            where: { id: pageId }, // Ищем по числу
-        });
+        const page = result.rows[0];
 
         if (!page) {
-            return NextResponse.json({ error: "Page not found" }, { status: 404 });
+            return NextResponse.json({ error: "Page introuvable" }, { status: 404 });
         }
 
         return NextResponse.json({
             sections: JSON.parse(page.content),
-            bgImage: page.bgImage || null,
+            bgImage: page.bg_image, // В базе это bg_image (с подчеркиванием)
             name: page.name,
-            createdAt: page.createdAt,
+            createdAt: page.created_at
         });
     } catch (error) {
-        console.error("GET /api/page/[id] →", error);
-        return NextResponse.json({ error: "Server error" }, { status: 500 });
+        console.error("Fetch Error:", error);
+        return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
     }
 }

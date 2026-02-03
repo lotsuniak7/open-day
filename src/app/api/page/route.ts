@@ -1,44 +1,37 @@
 import { NextResponse } from "next/server";
-import prisma from "../../../lib/prisma";
+import { sql } from "@vercel/postgres";
 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { sections, bgImage, studentFirstName, studentLastName, orientation } = body;
+        const { sections, bgImage, studentFirstName, studentLastName } = body;
 
-        if (!Array.isArray(sections) || sections.length === 0) {
-            return NextResponse.json(
-                { success: false, error: "sections must be a non-empty array" },
-                { status: 400 }
-            );
-        }
-
-        // имя: явные поля из модального окна > title из hero блока > fallback
+        // 1. Пытаемся понять имя студента
         let studentName = "Anonyme";
-        if (studentFirstName && studentLastName) {
-            studentName = `${studentFirstName} ${studentLastName}`;
+
+        // Если пришли поля имени/фамилии (из модалки, если она есть)
+        if (studentFirstName || studentLastName) {
+            studentName = `${studentFirstName || ""} ${studentLastName || ""}`.trim();
         } else {
-            const heroBlock = sections.find(
-                (s: any) => s.type === "hero" || s.type === "glitch"
-            );
+            // Иначе ищем в блоках (Hero или Glitch)
+            const heroBlock = sections.find((s: any) => s.type === 'hero' || s.type === 'glitch');
             if (heroBlock?.content?.title) studentName = heroBlock.content.title;
         }
 
-        const newPage = await prisma.studentPage.create({
-            data: {
-                name: studentName,
-                bgImage: typeof bgImage === "string" ? bgImage : "",
-                content: JSON.stringify(sections),
-                orientation: orientation || "",
-            },
-        });
+        // 2. Вставляем в базу (Neon Postgres)
+        // RETURNING id вернет нам номер созданной страницы (1, 2, 3...)
+        const result = await sql`
+      INSERT INTO student_pages (name, content, bg_image)
+      VALUES (${studentName}, ${JSON.stringify(sections)}, ${bgImage || ""})
+      RETURNING id;
+    `;
 
-        return NextResponse.json({ success: true, id: newPage.id });
+        const newId = result.rows[0].id;
+
+        return NextResponse.json({ success: true, id: newId });
+
     } catch (error) {
-        console.error("POST /api/page →", error);
-        return NextResponse.json(
-            { success: false, error: "Database error" },
-            { status: 500 }
-        );
+        console.error("Database Error:", error);
+        return NextResponse.json({ success: false, error: "Erreur sauvegarde" }, { status: 500 });
     }
 }

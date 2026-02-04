@@ -206,7 +206,7 @@ export default function ForumPage() {
                     </h1>
                     {/* sub */}
                     <p className="text-slate-400 max-w-lg text-lg leading-relaxed sm:mx-0 mx-auto">
-                        Retrouvez ici les sites créés en direct par les visiteurs et futurs étudiants.
+                        Retrouvez ici vos pages créés.
                     </p>
                 </div>
             </section>

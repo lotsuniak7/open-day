@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import confetti from "canvas-confetti"; // Импорт конфетти
+import confetti from "canvas-confetti";
 import {
     Plus, Trash2, ArrowUp, ArrowDown, Rocket,
     Type, Image as ImageIcon, Link2, User,
     Video, CheckCircle, UploadCloud,
     Terminal, Zap, MousePointer, Code, Image, X,
-    Wand2, QrCode, Share2, Copy
+    Wand2, QrCode, Share2, Copy, Calendar, Cpu
 } from "lucide-react";
 
 // --- GLOBAL CSS STYLES ---
@@ -33,7 +33,7 @@ const GLOBAL_STYLES = `
 `;
 
 // --- TYPES ---
-type BlockType = 'hero' | 'glitch' | 'terminal' | 'bio' | 'project' | 'socials' | 'skills' | 'video' | 'clicker' | 'code';
+type BlockType = 'hero' | 'glitch' | 'terminal' | 'bio' | 'project' | 'socials' | 'skills' | 'video' | 'clicker' | 'code' | 'timeline' | 'stack';
 
 interface Section {
     id: string;
@@ -45,8 +45,8 @@ interface Section {
     };
 }
 
-// --- AI PRESETS (Фейковый ИИ для помощи студентам) ---
-const AI_TITLES = ["Futur CEO", "Fullstack Genius", "Web Architect", "Creative Developer", "Hacker Éthique"];
+// --- AI PRESETS ---
+const AI_TITLES = ["Futur CEO", "Fullstack Genius", "Web Architect", "Creative Developer", "Hacker Éthique", "MMI Legend"];
 const AI_BIOS = [
     "Je transforme le café en code propre.",
     "Passionné par le design minimaliste et les performances maximales.",
@@ -56,9 +56,9 @@ const AI_BIOS = [
 
 // --- BACKGROUNDS ---
 const BG_PRESETS = [
-    { name: "Cyberpunk", url: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fblogger.googleusercontent.com%2Fimg%2Fb%2FR29vZ2xl%2FAVvXsEgZnWS-R_EjXa0ffptApRuDcHXcUeNjOVnMzvWscLJOqlYIJ4P8ki8797BetYSBcniduJXkiuNU5ZpTj0XNLEcGVbWoVg6qDrkhijjgdw098EedpEPUf8UZdq5kQwv8DesRII2_v_zhxanRj_7SnL_z9MxgeYjPboVY2P5KjWdrtUx0VR-xOoG_PubbTA%2Fs1060%2FMacron%2520gp44.jpeg&f=1&nofb=1&ipt=71d8b216bb911d587a5514d7e37b3471f027125cf73fe3f88a15d339d6dc1129" },
-    { name: "Neon City", url: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fmarketplace.canva.com%2FEAFhwfMq3ds%2F1%2F0%2F1600w%2Fcanva-colorful-cute-cats-illustration-desktop-wallpaper-KBBZLdpjLcM.jpg&f=1&nofb=1&ipt=06a743a743cfd1a5dc3cdd25dc52fd99d3b4f8a24de2fb9918162957f3c1c12e" },
-    { name: "Minimal", url: "https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fwallup.net%2Fwp-content%2Fuploads%2F2016%2F01%2F202396-space-stars-nebula-Carina_Nebula.jpg&f=1&nofb=1&ipt=711b8cfa8820d745de1dfff6bf04eb250a5c90592f713a5bb9b7344975714a70" },
+    { name: "Soleil", url: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fcdn.pixabay.com%2Fphoto%2F2015%2F04%2F23%2F22%2F00%2Ftree-736885_640.jpg&f=1&nofb=1&ipt=090cd8547716219cf6579c6120358d3ce4a9d9693e6702cdc4cf09116905fd94" },
+    { name: "Chats", url: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fmarketplace.canva.com%2FEAFhwfMq3ds%2F1%2F0%2F1600w%2Fcanva-colorful-cute-cats-illustration-desktop-wallpaper-KBBZLdpjLcM.jpg&f=1&nofb=1&ipt=06a743a743cfd1a5dc3cdd25dc52fd99d3b4f8a24de2fb9918162957f3c1c12e" },
+    { name: "Cyberpunk", url: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=2000&q=80" },
     { name: "Dark Grid", url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=2000&q=80" },
 ];
 
@@ -73,12 +73,13 @@ export default function PageBuilder() {
         }
     ]);
 
-    const [bgImage, setBgImage] = useState("");
+    const [bgImage, setBgImage] = useState(BG_PRESETS[1].url);
     const [isSaving, setIsSaving] = useState(false);
-    const [showModal, setShowModal] = useState(false); // Модалка с QR кодом
-    const [showPublishModal, setShowPublishModal] = useState(false); // Pre-publish modal
+    const [showModal, setShowModal] = useState(false);
+    const [showPublishModal, setShowPublishModal] = useState(false);
+    const [createdId, setCreatedId] = useState<string | null>(null);
 
-    // --- PUBLISH FORM STATE ---
+    // Form State
     const [publishForm, setPublishForm] = useState({
         prenom: "",
         nom: "",
@@ -130,7 +131,7 @@ export default function PageBuilder() {
         ));
     };
 
-    // --- "AI" GENERATORS ---
+    // --- AI GENERATORS ---
     const generateText = (id: string, field: string, type: 'title' | 'bio') => {
         const arr = type === 'title' ? AI_TITLES : AI_BIOS;
         const randomText = arr[Math.floor(Math.random() * arr.length)];
@@ -154,21 +155,16 @@ export default function PageBuilder() {
         }
     };
 
-    const [createdId, setCreatedId] = useState<string | null>(null);
-
-    // --- PUBLISH & CONFETTI ---
-    // Кнопка "PUBLIER" → открыт модальное окно для заполнения имени и ориентации
+    // --- PUBLISH ---
     const handlePublishClick = () => {
         setShowPublishModal(true);
     };
 
-    // Валидация формы и реальный POST
     const handleSave = async () => {
-        // guard — оба поля обязательны, orientation тоже
         if (!publishForm.prenom.trim() || !publishForm.nom.trim() || !publishForm.orientation) return;
 
         setIsSaving(true);
-        setShowPublishModal(false); // закрываем модальку формы
+        setShowPublishModal(false);
 
         try {
             const response = await fetch('/api/page', {
@@ -183,11 +179,8 @@ export default function PageBuilder() {
                 }),
             });
 
-            // Guard: если сервер вернул не JSON (например 404 HTML), не крешимся
             if (!response.ok) {
-                const text = await response.text();
-                console.error("POST failed", response.status, text);
-                alert("Erreur lors de la sauvegarde (code " + response.status + ")");
+                alert("Erreur serveur (500)");
                 setIsSaving(false);
                 return;
             }
@@ -196,7 +189,6 @@ export default function PageBuilder() {
 
             if (data.success) {
                 setCreatedId(data.id);
-
                 setTimeout(() => {
                     setIsSaving(false);
                     setShowModal(true);
@@ -204,17 +196,16 @@ export default function PageBuilder() {
                     const duration = 3 * 1000;
                     const animationEnd = Date.now() + duration;
                     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
-                    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
                     const interval: any = setInterval(function() {
                         const timeLeft = animationEnd - Date.now();
                         if (timeLeft <= 0) return clearInterval(interval);
                         const particleCount = 50 * (timeLeft / duration);
-                        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
-                        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+                        confetti({ ...defaults, particleCount, origin: { x: 0.2, y: Math.random() - 0.2 } });
+                        confetti({ ...defaults, particleCount, origin: { x: 0.8, y: Math.random() - 0.2 } });
                     }, 250);
                 }, 500);
             } else {
-                alert("Erreur lors de la sauvegarde !");
+                alert("Erreur sauvegarde !");
                 setIsSaving(false);
             }
         } catch (e) {
@@ -237,6 +228,8 @@ export default function PageBuilder() {
             case 'skills': return { list: [{ name: "HTML", level: 90 }, { name: "JS", level: 60 }] };
             case 'video': return { url: "" };
             case 'clicker': return { count: 0, label: "Lignes de code" };
+            case 'timeline': return { steps: [{ year: "2024", title: "Bac", desc: "Mention Bien" }] };
+            case 'stack': return { tools: ["Figma", "React", "Python"] };
             default: return {};
         }
     };
@@ -252,119 +245,67 @@ export default function PageBuilder() {
             <style>{GLOBAL_STYLES}</style>
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange}/>
 
-            {/* --- MODAL PRE-PUBLISH (имя + ориентация) --- */}
+            {/* --- MODAL FORM --- */}
             {showPublishModal && (
                 <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                    <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl">
-                        {/* header */}
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h2 className="text-xl font-black text-slate-800">Avant de publier</h2>
-                                <p className="text-xs text-slate-400 mt-0.5">Ces infos apparaîtront sur la galerie.</p>
-                            </div>
-                            <button onClick={() => setShowPublishModal(false)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition">
-                                <X size={18} />
-                            </button>
+                    <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl animate-in fade-in zoom-in duration-300">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-black text-slate-800">Avant de publier</h2>
+                            <button onClick={() => setShowPublishModal(false)}><X size={20} className="text-slate-400 hover:text-red-500"/></button>
                         </div>
-
-                        {/* fields */}
                         <div className="space-y-4">
-                            {/* prénom + nom — side by side */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Prénom</label>
-                                    <input
-                                        type="text"
-                                        autoComplete="off"
-                                        placeholder="Marie"
-                                        value={publishForm.prenom}
-                                        onChange={(e) => setPublishForm({ ...publishForm, prenom: e.target.value })}
-                                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-300 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
-                                    />
+                                    <label className="text-[10px] font-bold uppercase text-slate-400">Prénom</label>
+                                    <input className="w-full p-3 bg-slate-50 border rounded-xl font-bold" placeholder="Marie" value={publishForm.prenom} onChange={e => setPublishForm({...publishForm, prenom: e.target.value})} />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Nom</label>
-                                    <input
-                                        type="text"
-                                        autoComplete="off"
-                                        placeholder="Dupont"
-                                        value={publishForm.nom}
-                                        onChange={(e) => setPublishForm({ ...publishForm, nom: e.target.value })}
-                                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-300 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
-                                    />
+                                    <label className="text-[10px] font-bold uppercase text-slate-400">Nom</label>
+                                    <input className="w-full p-3 bg-slate-50 border rounded-xl font-bold" placeholder="Curie" value={publishForm.nom} onChange={e => setPublishForm({...publishForm, nom: e.target.value})} />
                                 </div>
                             </div>
-
-                            {/* orientation dropdown */}
                             <div>
-                                <label className="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">
-                                    Le parcours qui vous attire le plus ?
-                                </label>
-                                <select
-                                    value={publishForm.orientation}
-                                    onChange={(e) => setPublishForm({ ...publishForm, orientation: e.target.value })}
-                                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition appearance-none cursor-pointer"
-                                >
-                                    <option value="" disabled>Choisir un parcours…</option>
-                                    <option value="communication">Communication</option>
-                                    <option value="developpement_web">Développement Web</option>
-                                    <option value="creation_numerique">Création Numérique</option>
-                                    <option value="pas_encore">Je ne sais pas encore</option>
+                                <label className="text-[10px] font-bold uppercase text-slate-400">Parcours visé</label>
+                                <select className="w-full p-3 bg-slate-50 border rounded-xl font-bold" value={publishForm.orientation} onChange={e => setPublishForm({...publishForm, orientation: e.target.value})}>
+                                    <option value="" disabled>Choisir...</option>
+                                    <option value="dev">Développement Web</option>
+                                    <option value="design">Design / Création</option>
+                                    <option value="com">Communication</option>
+                                    <option value="jsp">Je ne sais pas encore</option>
                                 </select>
                             </div>
-                        </div>
-
-                        {/* actions */}
-                        <div className="flex gap-3 mt-7">
-                            <button
-                                onClick={() => setShowPublishModal(false)}
-                                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-sm transition"
-                            >
-                                Annuler
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                disabled={!publishForm.prenom.trim() || !publishForm.nom.trim() || !publishForm.orientation}
-                                className="flex-1 py-2.5 bg-blue-600 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition
-                                           disabled:opacity-40 disabled:cursor-not-allowed
-                                           enabled:hover:bg-blue-700 enabled:shadow-md enabled:shadow-blue-200"
-                            >
-                                <Rocket size={16} /> Publier
+                            <button onClick={handleSave} disabled={!publishForm.prenom || !publishForm.nom || !publishForm.orientation} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition flex justify-center gap-2 disabled:opacity-50 mt-4">
+                                <Rocket size={20}/> PUBLIER
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* --- MODAL SUCCESS (QR CODE) --- */}
+            {/* --- MODAL SUCCESS --- */}
             {showModal && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl text-center transform scale-100 transition-all">
-                        <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Rocket size={32} />
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl text-center border-4 border-blue-500/20">
+                        <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg animate-bounce">
+                            <Rocket size={40} />
                         </div>
-                        <h2 className="text-2xl font-black text-slate-800 mb-2">Félicitations !</h2>
-                        <p className="text-slate-500 mb-6">Ta page est en ligne. Scanne le code pour la voir sur ton mobile.</p>
+                        <h2 className="text-3xl font-black text-slate-900 mb-2 uppercase tracking-tight">C'est en ligne !</h2>
+                        <p className="text-slate-500 mb-8 font-medium">Scanne le code pour garder ta page.</p>
 
-                        <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 inline-block mb-6">
-                            {/* Реальный QR Code API (Google Charts или аналог) */}
+                        <div className="bg-white p-4 rounded-2xl shadow-inner border border-slate-200 inline-block mb-8 relative group cursor-pointer">
                             <img
-                                // ВАЖНО: Мы используем window.location.origin, чтобы ссылка работала и локально, и на сервере
-                                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${typeof window !== 'undefined' ? window.location.origin : ''}/view/${createdId}`}
+                                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${typeof window !== 'undefined' ? window.location.origin : ''}/view/${createdId}`}
                                 alt="QR Code"
-                                className="w-40 h-40 mix-blend-multiply mx-auto"
+                                className="w-48 h-48 mix-blend-multiply"
                             />
-                            <p className="text-xs text-slate-400 mt-2 font-mono break-all">
-                                ID: {createdId}
-                            </p>
                         </div>
 
-                        <div className="flex gap-3">
-                            <button onClick={() => setShowModal(false)} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
-                                Fermer
-                            </button>
-                            <button className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition flex items-center justify-center gap-2">
-                                <Share2 size={18}/> Partager
+                        <div className="flex flex-col gap-3">
+                            <a href={`/view/${createdId}`} target="_blank" className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition flex items-center justify-center gap-2">
+                                <Share2 size={18}/> Voir ma page
+                            </a>
+                            <button onClick={() => window.location.reload()} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-lg rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-blue-200 hover:scale-[1.02]">
+                                ✨ TERMINER (NOUVEL ÉTUDIANT)
                             </button>
                         </div>
                     </div>
@@ -399,6 +340,8 @@ export default function PageBuilder() {
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1">Classique</p>
                         <div className="grid grid-cols-2 gap-2">
                             <BlockBtn onClick={() => addSection('hero')} icon={<Type/>} label="Titre" />
+                            <BlockBtn onClick={() => addSection('timeline')} icon={<Calendar/>} label="Parcours" />
+                            <BlockBtn onClick={() => addSection('stack')} icon={<Cpu/>} label="Stack" />
                             <BlockBtn onClick={() => addSection('bio')} icon={<User/>} label="Bio" />
                             <BlockBtn onClick={() => addSection('project')} icon={<ImageIcon/>} label="Projet" />
                             <BlockBtn onClick={() => addSection('skills')} icon={<CheckCircle/>} label="Skills" />
@@ -426,7 +369,6 @@ export default function PageBuilder() {
                             ))}
                             <button onClick={() => setBgImage("")} className="w-8 h-8 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:text-red-500 transition shadow-sm"><X size={14}/></button>
                         </div>
-                        <input type="text" placeholder="Ou URL image..." className="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none" value={bgImage} onChange={(e) => setBgImage(e.target.value)}/>
                     </div>
                 </div>
 
@@ -442,10 +384,7 @@ export default function PageBuilder() {
             </aside>
 
             {/* --- CANVAS --- */}
-            <main
-                className="flex-1 relative flex flex-col items-center transition-all overflow-hidden bg-cover bg-center bg-fixed"
-                style={{ backgroundColor: '#cbd5e1', backgroundImage: bgImage ? `url(${bgImage})` : 'none' }}
-            >
+            <main className="flex-1 relative flex flex-col items-center transition-all overflow-hidden bg-cover bg-center bg-fixed" style={{ backgroundColor: '#cbd5e1', backgroundImage: bgImage ? `url(${bgImage})` : 'none' }}>
                 <div ref={scrollRef} className="w-full flex-1 overflow-y-auto p-8 pb-32 flex flex-col items-center z-10">
                     <div className="w-full max-w-4xl">
 
@@ -482,6 +421,49 @@ export default function PageBuilder() {
 
                                 <div className="p-8 md:p-12">
 
+                                    {/* --- NEW: TIMELINE BLOCK --- */}
+                                    {section.type === 'timeline' && (
+                                        <div>
+                                            <h3 className="text-sm font-bold uppercase opacity-50 mb-6 border-b border-current/10 pb-2">Mon Parcours</h3>
+                                            <div className="space-y-6 relative border-l-2 border-current/20 ml-2 pl-6">
+                                                {section.content.steps.map((step: any, i: number) => (
+                                                    <div key={i} className="relative">
+                                                        <div className="absolute -left-[31px] top-1 w-4 h-4 rounded-full border-2 border-current bg-inherit z-10"></div>
+                                                        <div className="flex flex-col sm:flex-row gap-2 sm:items-baseline">
+                                                            <input className="font-mono font-bold text-lg bg-transparent border-none outline-none w-20" value={step.year} onChange={(e) => {const ns = [...section.content.steps]; ns[i].year = e.target.value; updateContent(section.id, 'steps', ns)}} />
+                                                            <div className="flex-1">
+                                                                <input className="font-bold text-xl bg-transparent border-none outline-none w-full" value={step.title} onChange={(e) => {const ns = [...section.content.steps]; ns[i].title = e.target.value; updateContent(section.id, 'steps', ns)}} />
+                                                                <input className="opacity-60 text-sm bg-transparent border-none outline-none w-full" value={step.desc} onChange={(e) => {const ns = [...section.content.steps]; ns[i].desc = e.target.value; updateContent(section.id, 'steps', ns)}} />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <button onClick={() => updateContent(section.id, 'steps', [...section.content.steps, {year: "202"+(section.content.steps.length+4), title: "Futur...", desc: "..."}])} className="text-xs font-bold opacity-50 hover:opacity-100 flex items-center gap-1 mt-4"><Plus size={12}/> Ajouter une étape</button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* --- NEW: TECH STACK --- */}
+                                    {section.type === 'stack' && (
+                                        <div className="text-center">
+                                            <h3 className="text-sm font-bold uppercase opacity-50 mb-6">Ma Stack Technique</h3>
+                                            <div className="flex flex-wrap justify-center gap-3">
+                                                {section.content.tools.map((tool: string, i: number) => (
+                                                    <div key={i} className="group/tag relative">
+                                                        <input
+                                                            className="bg-current/10 rounded-lg px-4 py-2 font-bold text-lg text-center min-w-[80px] border-none outline-none"
+                                                            style={{ color: section.styles.color }}
+                                                            value={tool}
+                                                            onChange={(e) => { const nt = [...section.content.tools]; nt[i] = e.target.value; updateContent(section.id, 'tools', nt); }}
+                                                        />
+                                                        <button onClick={() => { const nt = section.content.tools.filter((_:any, idx:number) => idx !== i); updateContent(section.id, 'tools', nt); }} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover/tag:opacity-100 transition"><X size={10}/></button>
+                                                    </div>
+                                                ))}
+                                                <button onClick={() => updateContent(section.id, 'tools', [...section.content.tools, "New"])} className="bg-current/5 border-2 border-dashed border-current/20 rounded-lg px-4 py-2 opacity-50 hover:opacity-100 transition"><Plus size={20}/></button>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* GLITCH */}
                                     {section.type === 'glitch' && (
                                         <div className="text-center space-y-4">
@@ -497,7 +479,7 @@ export default function PageBuilder() {
                                         </div>
                                     )}
 
-                                    {/* CODE SNIPPET (NEW) */}
+                                    {/* CODE SNIPPET */}
                                     {section.type === 'code' && (
                                         <div className="font-mono text-sm relative">
                                             <div className="flex justify-between items-center mb-2 opacity-60 text-xs uppercase tracking-widest">
